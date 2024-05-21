@@ -14,7 +14,7 @@ import type { PluginOption } from 'vite'
 export default defineConfig({
   plugins: [
     vue(),
-    viteDnsPrefetchPlugin(),
+    dnsPrefetchPlugin(),
   ],
 })
 ```
