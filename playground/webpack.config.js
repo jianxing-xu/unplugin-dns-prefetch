@@ -1,6 +1,7 @@
 const path = require('node:path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const DnsPrefetchPlugin = require('../dist/webpack.cjs').default
+// const DnsPrefetchPlugin = require('../dist/webpack.cjs').default
+const DnsPrefetchPlugin = require('unplugin-prefetch-dns/webpack').default
 
 module.exports = {
   mode: 'development',

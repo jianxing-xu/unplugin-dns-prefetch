@@ -8,7 +8,7 @@ Vite
 ```javascript
 // vite.config.ts
 import { defineConfig } from 'vite'
-import dnsPrefetchPlugin from 'unplugin-dns-prefetch/vite'
+import dnsPrefetchPlugin from 'unplugin-prefetch-dns/vite'
 import vue from '@vitejs/plugin-vue'
 import type { PluginOption } from 'vite'
 export default defineConfig({
@@ -24,7 +24,7 @@ Webpack
 // webpack.config.js
 module.exports = {
   plugins: [
-    require('unplugin-dns-prefetch/webpack'),
+    require('unplugin-prefetch-dns/webpack').default,
   ],
 }
 ```
@@ -35,7 +35,7 @@ Vue CLI
 module.exports = {
   configureWebpack: {
     plugins: [
-      require('unplugin-dns-prefetch/webpack')
+      require('unplugin-prefetch-dns/webpack').default
     ],
   },
 }
