@@ -5,14 +5,17 @@ import urlRegex from 'url-regex'
 import type { Compiler } from 'webpack'
 import type { Options } from './types'
 
-const PLUGIN_NAME = 'unplugin-dns-prefetch:webpack'
+const PLUGIN_NAME = 'unplugin-prefetch-dns:webpack'
+
+const URL_REG = /https:\/\/[^/]*/i
 
 export const unpluginFactory: UnpluginFactory<Options | undefined> = () => {
   const htmlTemplatePaths = [] as string[][]
   const urls = new Set<string>()
-  const URL_REG = /https:\/\/[^/]*/i
 
   function process(dir: string, filePaths: string[]) {
+    htmlTemplatePaths.length = 0
+    urls.clear()
     return Promise.all(filePaths.map(async (fileName) => {
       const content = await fs.readFile(`${dir}/${fileName}`, 'utf-8')
 
@@ -29,21 +32,28 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = () => {
         if (matched)
           urls.add(matched[0])
       })
-
+    })).then(() => {
+      // insert url
       if (urls.size === 0)
         return
-
-      // insert url
-      const links = [...urls].map(url => `<link rel="dns-prefetch" href="${url}">`).join('\n  ')
+      let links = [...urls].map(url => `<link rel="dns-prefetch" href="${url}">`)
       for (const [path, content] of htmlTemplatePaths) {
-        const newHTML = content.replace(/(<head[^>]*>)/, (_, head) => `${head}\n  ${links}`)
-        await fs.writeFile(path, newHTML, 'utf-8')
+        const headS = content.indexOf('<head>')
+        const headE = content.indexOf('</head>')
+        const headStr = content.slice(headS - 1, headE + 1)
+        links = links.filter((link) => {
+          return !headStr.includes(link)
+        })
+        if (!links.length)
+          return
+        const newHTML = content.replace(/(<head[^>]*>)/, (_, head) => `${head}\n  ${links.join('\n ')}`)
+        fs.writeFile(path, newHTML, 'utf-8')
       }
-    }))
+    })
   }
 
   return {
-    name: 'unplugin-prefetch-dns',
+    name: PLUGIN_NAME,
     enforce: 'post',
     vite: {
       writeBundle: {
@@ -55,10 +65,10 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = () => {
       },
     },
     webpack(compiler: Compiler) {
-      compiler.hooks.done.tapAsync({ name: PLUGIN_NAME }, async (stats) => {
-        const path = stats.compilation.outputOptions.path
-        const fileNames = stats.compilation.assetsInfo.keys()
-        await process(path!, [...fileNames])
+      compiler.hooks.afterEmit.tapAsync({ name: PLUGIN_NAME }, async (stats) => {
+        const path = stats.outputOptions.path
+        const fileNames = stats.assetsInfo.keys()
+        process(path!, [...fileNames])
       })
     },
   }
